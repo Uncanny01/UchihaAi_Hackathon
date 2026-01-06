@@ -166,15 +166,41 @@ def extract_text_vision(file, provider):
         return f"Logic Error: {str(e)}"
     
 def categorize_document(text, primary):
-    """AI identifies document category for dynamic file naming."""
-    prompt = f"Categorize this document (e.g., Invoice, Resume, Legal, Report). Return ONLY the 1-2 word name.\n\nText: {text[:1000]}"
-    client = openai_client if primary == "GPT-4o" else groq_client
-    model = "gpt-4o-mini" if primary == "GPT-4o" else "llama-3.1-8b-instant"
-    try:
-        response = client.chat.completions.create(model=model, messages=[{"role": "user", "content": prompt}], max_tokens=10)
-        return response.choices[0].message.content.strip().replace(" ", "_")
-    except:
+    """AI identifies document category with automated GPT -> Groq fallback."""
+    # Safety check for empty text
+    if not text or len(text.strip()) < 5:
         return "Document"
+
+    prompt = f"Categorize this document (e.g., Invoice, Resume, Legal, Report). Return ONLY the 1-2 word name.\n\nText: {text[:1000]}"
+    
+    # Define the sequence: (Name, Client, Model)
+    if primary == "GPT-4o":
+        sequence = [
+            ("GPT-4o", openai_client, "gpt-4o-mini"),
+            ("Groq", groq_client, "llama-3.1-8b-instant")
+        ]
+    else:
+        sequence = [
+            ("Groq", groq_client, "llama-3.1-8b-instant"),
+            ("GPT-4o", openai_client, "gpt-4o-mini")
+        ]
+
+    for i, (name, client, model_id) in enumerate(sequence):
+        try:
+            response = client.chat.completions.create(
+                model=model_id, 
+                messages=[{"role": "user", "content": prompt}], 
+                max_tokens=10
+            )
+            return response.choices[0].message.content.strip().replace(" ", "_")
+        
+        except Exception:
+            # If the first attempt fails, trigger the UI warning flag
+            if i == 0:
+                st.session_state.failover_active = True
+            continue # Move to the fallback model
+
+    return "Document"
 
 if "failover_active" not in st.session_state:
     st.session_state.failover_active = False
