@@ -89,7 +89,7 @@ def get_routing_decision(file):
         
         except Exception as e:
             # --- FALLBACK: Groq Llama Vision ---
-            st.toast(f"⚠️ Routing failover: {str(e)[:40]}...", icon="🔄")
+            st.toast(f"⚠️ GPT failover: Switching to Groq", icon="🔄")
             response = groq_client.chat.completions.create(
                 model="meta-llama/llama-4-scout-17b-16e-instruct",
                 messages=[{"role": "user", "content": [
