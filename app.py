@@ -12,8 +12,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
 # ===== Config =====
-pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
-POPPLER_PATH = "/opt/homebrew/bin"
+# dev purposes
+# pytesseract.pytesseract.tesseract_cmd = "/opt/homebrew/bin/tesseract"
+# POPPLER_PATH = "/opt/homebrew/bin"
 
 # Initialize clients
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -62,7 +63,7 @@ def get_routing_decision(file):
     try:
         # Image Preparation
         if file.type == "application/pdf":
-            images = convert_from_bytes(file.getvalue(), poppler_path=POPPLER_PATH)
+            images = convert_from_bytes(file.getvalue())
             img = images[0]
         else:
             img = Image.open(file)
@@ -107,7 +108,7 @@ def extract_text_standard(file):
     text = ""
     try:
         if file.type == "application/pdf":
-            images = convert_from_bytes(file.getvalue(), poppler_path=POPPLER_PATH)
+            images = convert_from_bytes(file.getvalue())
             for img in images:
                 text += pytesseract.image_to_string(img, lang="hin+eng") + "\n"
         else:
@@ -121,7 +122,7 @@ def extract_text_vision(file, provider):
     """Image transcription with automated Provider -> Alternate fallback."""
     try:
         if file.type == "application/pdf":
-            images = convert_from_bytes(file.getvalue(), poppler_path=POPPLER_PATH)
+            images = convert_from_bytes(file.getvalue())
             img = images[0]
             buf = io.BytesIO()
             img.save(buf, format="JPEG")
